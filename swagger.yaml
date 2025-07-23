@@ -28,7 +28,7 @@ paths:
           description: "Nome do jogo, ex: yugioh ou pokemon"
           required: true
           schema:
-            $ref: "#/components/parameters/Jogos"
+            $ref: "#/components/schemas/Jogos"
         - in: "query"
           name: "page_number"
           description: "O número da página a ser retornada"
@@ -61,7 +61,7 @@ paths:
           description: "Nome do jogo, ex: yugioh ou pokemon"
           required: true
           schema:
-            $ref: "#/components/parameters/Jogos"
+            $ref: "#/components/schemas/Jogos"
         - in: "path"
           name: "codigo"
           description: "O código da carta no MYP Cards, ex: . Atenção: o código deve ser convertido para `encode_base_64`"
@@ -86,7 +86,7 @@ paths:
           description: "Nome do jogo, ex: yugioh ou pokemon"
           required: true
           schema:
-            $ref: "#/components/parameters/Jogos"
+            $ref: "#/components/schemas/Jogos"
         - name: "nome"
           in: "path"
           description: "O nome da carta, podendo ser em inglês ou portugues"
@@ -133,7 +133,7 @@ paths:
                 $ref: "#/components/schemas/Produto"
 
 components:
-  parameters:
+  schemas:
     Jogos:
       type: string
       enum:
@@ -153,8 +153,6 @@ components:
         - swdestiny
         - vanguard
         - swunlimited
-
-  schemas:
     PrecoResponse:
       properties:
         page_number:

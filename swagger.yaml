@@ -42,7 +42,7 @@ paths:
           required: false
           schema:
             type: "integer"
-            default: 100
+            default: 50
       responses:
         200:
           description: "Sucesso"
@@ -74,7 +74,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Carta"
+                $ref: "#/components/schemas/Produto"
   /{jogo}/carta/{nome}:
     get:
       tags:
@@ -99,7 +99,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Carta"
+                $ref: "#/components/schemas/Produto"
   /produto/{id_produto}:
     get:
       tags:
@@ -162,19 +162,30 @@ components:
         precos:
           type: array
           items:
-            $ref: "#/components/schemas/Carta"
-    Carta:
+            $ref: "#/components/schemas/Produto"
+
+    Produto:
       type: "object"
       properties:
         internal_code:
           type: "integer"
         card_code:
           type: "string"
-        idmarca:
+        id_marca:
           type: "integer"
         name_pt:
           type: "string"
         name_en:
+          type: "string"
+        slug_pt:
+          type: "string"
+        slug_en:
+          type: "string"
+        edition_pt:
+          type: "string"
+        edition_en:
+          type: "string"
+        edition_code:
           type: "string"
         min_price:
           type: "string"
@@ -182,31 +193,13 @@ components:
           type: "string"
         max_price:
           type: "string"
-        available_quantity:
-          type: "integer"
         tcg_price:
           type: "string"
+        available_quantity:
+          type: "integer"
         img_pt:
           type: "string"
         img_en:
           type: "string"
         link:
           type: "string"
-
-    Produto:
-      type: "object"
-      properties:
-        internal_code:
-          type: "integer"
-        idmarca:
-          type: "integer"
-        name_pt:
-          type: "string"
-        name_en:
-          type: "string"
-        slugnomeptproduto:
-          type: "string"
-        slugnomeenproduto:
-          type: "string"
-
-

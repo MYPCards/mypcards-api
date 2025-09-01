@@ -104,7 +104,7 @@ paths:
     get:
       tags:
         - "cartas"
-      summary: "Retorna uma lista de cartas baseada no nome indicado"
+      summary: "Retorna um produto baseada no id indicado"
       parameters:
         - in: "path"
           name: "id_produto"

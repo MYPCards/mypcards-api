@@ -1,0 +1,22 @@
+name: Validate OpenAPI
+
+on:
+  pull_request:
+    paths:
+      - 'swagger.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'swagger.yaml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate OpenAPI spec
+        uses: char0n/swagger-editor-validate@v1
+        with:
+          definition-file: swagger.yaml

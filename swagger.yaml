@@ -150,6 +150,8 @@ components:
         - hp
         - lorcana
         - lotr
+        - riftbound
+        - sorcery
         - swdestiny
         - vanguard
         - swunlimited
@@ -159,7 +161,7 @@ components:
           type: integer
         page_size:
           type: integer
-        precos:
+        cards:
           type: array
           items:
             $ref: "#/components/schemas/Produto"
@@ -173,6 +175,9 @@ components:
           type: "string"
         id_marca:
           type: "integer"
+        tcg_productId:
+          type: "integer"
+          nullable: true
         name_pt:
           type: "string"
         name_en:

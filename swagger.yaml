@@ -2,140 +2,184 @@ openapi: 3.1.0
 
 info:
   title: "MYP Cards - API"
-  description: "O maior portal de cardgames: Magic, Yu-Gi-Oh!, Pokémon, Battle Scenes, Star Wars: Destiny, Dragon Ball Super, Lord of the Rings, Harry Potter, Digimon, Vanguard, Flesh & Blood, One Piece, Lorcana, Star Wars: Unlimited, Dragon Ball Super: Fusion World e muito mais!"
+  description: |
+    API pública do MYP Cards, o maior portal de cardgames do Brasil.
+
+    **Jogos suportados:** Magic: The Gathering, Yu-Gi-Oh!, Pokémon, One Piece, Lorcana, Flesh & Blood, Digimon, Dragon Ball Super Fusion World, Dragon Ball Super Masters, Gundam, Harry Potter, Lord of the Rings, Battle Scenes, Star Wars: Destiny, Star Wars: Unlimited, Cardfight!! Vanguard, Sorcery: Contested Realm, Riftbound.
+
+    **Limites:** A paginação é limitada a 50 itens por página.
   version: "1.0.0"
+  contact:
+    name: "MYP Cards"
+    url: "https://mypcards.com"
 
 servers:
   - url: "https://mypcards.com/api/v1"
+    description: "Servidor de produção"
 
 tags:
   - name: "preço"
     description: "APIs relacionadas a preços de cartas"
   - name: "cartas"
-    description: "APIs gerais sobre cartas"
+    description: "APIs de busca de cartas"
   - name: "produtos"
     description: "APIs gerais sobre produtos"
 
 paths:
   /{jogo}/precos:
     get:
+      operationId: "listarPrecos"
       tags:
         - "preço"
-      summary: "Retorna uma lista de cartas de uma jogo específico"
+      summary: "Lista cartas com preços"
+      description: "Retorna uma lista paginada de cartas de um jogo específico com informações de preço."
       parameters:
         - in: "path"
           name: "jogo"
-          description: "Nome do jogo, ex: yugioh ou pokemon"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
           required: true
           schema:
             $ref: "#/components/schemas/Jogos"
         - in: "query"
           name: "page_number"
-          description: "O número da página a ser retornada"
+          description: "Número da página (começa em 1)"
           required: false
           schema:
             type: "integer"
             default: 1
+            minimum: 1
         - name: "page_size"
           in: "query"
-          description: "A quantidade de itens a ser retornado"
+          description: "Quantidade de itens por página"
           required: false
           schema:
             type: "integer"
             default: 50
+            minimum: 1
+            maximum: 50
       responses:
         200:
-          description: "Sucesso"
+          description: "Lista de cartas retornada com sucesso"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PrecoResponse"
+
   /{jogo}/precos/{codigo}:
     get:
+      operationId: "obterPrecoPorCodigo"
       tags:
         - "preço"
-      summary: "Retorna uma carta com base no código"
+      summary: "Obtém carta por código"
+      description: "Retorna os dados de uma carta específica com base no código do produto."
       parameters:
         - in: "path"
           name: "jogo"
-          description: "Nome do jogo, ex: yugioh ou pokemon"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
           required: true
           schema:
             $ref: "#/components/schemas/Jogos"
         - in: "path"
           name: "codigo"
-          description: "O código da carta no MYP Cards, ex: . Atenção: o código deve ser convertido para `encode_base_64`"
+          description: |
+            Código da carta no MYP Cards, codificado em Base64.
+            Exemplo: o código `LOB-001` deve ser enviado como `TE9CLTAwMQ==`
           required: true
           schema:
             type: "string"
+            example: "TE9CLTAwMQ=="
       responses:
         200:
-          description: "Sucesso"
+          description: "Carta encontrada"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Produto"
+        404:
+          description: "Carta não encontrada"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /{jogo}/carta/{nome}:
     get:
+      operationId: "buscarCartaPorNome"
       tags:
         - "cartas"
-      summary: "Retorna uma lista de cartas baseada no nome indicado"
+      summary: "Busca cartas por nome"
+      description: "Retorna uma lista de cartas que correspondem exatamente ao nome informado."
       parameters:
         - in: "path"
           name: "jogo"
-          description: "Nome do jogo, ex: yugioh ou pokemon"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
           required: true
           schema:
             $ref: "#/components/schemas/Jogos"
         - name: "nome"
           in: "path"
-          description: "O nome da carta, podendo ser em inglês ou portugues"
+          description: "Nome exato da carta em inglês ou português"
           required: true
           schema:
             type: string
+            example: "Dark Magician"
       responses:
         200:
-          description: "Sucesso"
+          description: "Busca realizada com sucesso"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Produto"
+                $ref: "#/components/schemas/CartaResponse"
+
   /produto/{id_produto}:
     get:
+      operationId: "obterProdutoPorId"
       tags:
-        - "cartas"
-      summary: "Retorna um produto baseada no id indicado"
+        - "produtos"
+      summary: "Obtém produto por ID"
+      description: "Retorna os dados de um produto específico com base no ID interno do MYP Cards."
       parameters:
         - in: "path"
           name: "id_produto"
-          description: "Codigo do produto"
+          description: "ID interno do produto no MYP Cards"
           required: true
           schema:
             type: integer
+            example: 12345
       responses:
         200:
-          description: "Sucesso"
+          description: "Produto encontrado"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Produto"
+                $ref: "#/components/schemas/ProdutoSimples"
+        404:
+          description: "Produto não encontrado"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /produto/aleatorio:
     get:
+      operationId: "obterProdutoAleatorio"
       tags:
         - "produtos"
-      summary: "Retorna um produto aleatório"
+      summary: "Obtém produto aleatório"
+      description: "Retorna um produto aleatório disponível para venda no marketplace."
       responses:
         200:
-          description: "Sucesso"
+          description: "Produto retornado com sucesso"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Produto"
+                $ref: "#/components/schemas/ProdutoSimples"
 
 components:
   schemas:
     Jogos:
       type: string
+      description: "Identificador do jogo de cartas"
       enum:
         - yugioh
         - pokemon
@@ -155,56 +199,171 @@ components:
         - swdestiny
         - vanguard
         - swunlimited
+
     PrecoResponse:
+      type: object
+      description: "Resposta paginada com lista de cartas"
       properties:
         page_number:
           type: integer
+          description: "Número da página atual"
+          example: 1
         page_size:
           type: integer
+          description: "Quantidade de itens por página"
+          example: 50
         cards:
           type: array
+          description: "Lista de cartas"
+          items:
+            $ref: "#/components/schemas/Produto"
+
+    CartaResponse:
+      type: object
+      description: "Resposta com lista de cartas encontradas"
+      properties:
+        cards:
+          type: array
+          description: "Lista de cartas que correspondem à busca"
           items:
             $ref: "#/components/schemas/Produto"
 
     Produto:
-      type: "object"
+      type: object
+      description: "Dados completos de uma carta/produto"
       properties:
         internal_code:
-          type: "integer"
+          type: integer
+          description: "ID interno do produto no MYP Cards"
+          example: 12345
         card_code:
-          type: "string"
+          type: string
+          description: "Código da carta (ex: LOB-001)"
+          example: "LOB-001"
         id_marca:
-          type: "integer"
+          type: integer
+          description: "ID do jogo/marca (0=Yu-Gi-Oh!, 1=Magic, 2=Pokémon, etc.)"
+          example: 0
         tcg_productId:
-          type: "integer"
+          type: integer
           nullable: true
+          description: "ID do produto no TCGPlayer (quando disponível)"
+          example: 86354
         name_pt:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Nome da carta em português"
+          example: "Mago Negro"
         name_en:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Nome da carta em inglês"
+          example: "Dark Magician"
         slug_pt:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Slug do nome em português (para URLs)"
+          example: "mago-negro"
         slug_en:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Slug do nome em inglês (para URLs)"
+          example: "dark-magician"
         edition_pt:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Nome da edição em português"
+          example: "Lendas do Duelo Azul"
         edition_en:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Nome da edição em inglês"
+          example: "Legend of Blue Eyes White Dragon"
         edition_code:
-          type: "string"
+          type: string
+          description: "Código/sigla da edição"
+          example: "LOB"
         min_price:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Menor preço disponível (em BRL)"
+          example: "15.00"
         avg_price:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Preço médio (em BRL)"
+          example: "25.50"
         max_price:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Maior preço disponível (em BRL)"
+          example: "45.00"
         tcg_price:
-          type: "string"
+          type: string
+          nullable: true
+          description: "Preço de referência do TCGPlayer (em USD)"
+          example: "5.99"
         available_quantity:
-          type: "integer"
+          type: integer
+          nullable: true
+          description: "Quantidade total disponível para venda"
+          example: 23
         img_pt:
-          type: "string"
+          type: string
+          description: "URL da imagem da carta em português"
+          example: "https://img.mypcards.com/produtos/12345_pt.jpg"
         img_en:
-          type: "string"
+          type: string
+          description: "URL da imagem da carta em inglês"
+          example: "https://img.mypcards.com/produtos/12345_en.jpg"
         link:
-          type: "string"
+          type: string
+          description: "URL da página do produto no MYP Cards"
+          example: "https://mypcards.com/yugioh/produto/12345/dark-magician"
+
+    ProdutoSimples:
+      type: object
+      description: "Dados básicos de um produto (sem informações de preço)"
+      properties:
+        internal_code:
+          type: integer
+          description: "ID interno do produto no MYP Cards"
+          example: 12345
+        idmarca:
+          type: integer
+          description: "ID do jogo/marca"
+          example: 0
+        name_pt:
+          type: string
+          nullable: true
+          description: "Nome da carta em português"
+          example: "Mago Negro"
+        name_en:
+          type: string
+          nullable: true
+          description: "Nome da carta em inglês"
+          example: "Dark Magician"
+        slugnomeptproduto:
+          type: string
+          nullable: true
+          description: "Slug do nome em português"
+          example: "mago-negro"
+        slugnomeenproduto:
+          type: string
+          nullable: true
+          description: "Slug do nome em inglês"
+          example: "dark-magician"
+        tcg_productId:
+          type: integer
+          nullable: true
+          description: "ID do produto no TCGPlayer (quando disponível)"
+          example: 86354
+
+    Error:
+      type: object
+      description: "Resposta de erro"
+      properties:
+        error:
+          type: string
+          description: "Mensagem de erro"
+          example: "card_code not found."

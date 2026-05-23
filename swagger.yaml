@@ -8,6 +8,8 @@ info:
     **Jogos suportados:** Magic: The Gathering, Yu-Gi-Oh!, Pokémon, One Piece, Lorcana, Flesh & Blood, Digimon, Dragon Ball Super Fusion World, Dragon Ball Super Masters, Gundam, Harry Potter, Lord of the Rings, Battle Scenes, Star Wars: Destiny, Star Wars: Unlimited, Cardfight!! Vanguard, Sorcery: Contested Realm, Riftbound.
 
     **Limites:** A paginação é limitada a 50 itens por página.
+
+    **Autenticação:** Alguns endpoints requerem autenticação via header `X-Api-Token`. Os tokens são gerados internamente — entre em contato com o time de suporte do MYP Cards para solicitar acesso.
   version: "1.0.0"
   contact:
     name: "MYP Cards"
@@ -176,6 +178,13 @@ paths:
                 $ref: "#/components/schemas/ProdutoSimples"
 
 components:
+  securitySchemes:
+    ApiTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Token
+      description: "Token gerado pelo time de suporte do MYP Cards. Entre em contato para solicitar acesso."
+
   schemas:
     Jogos:
       type: string

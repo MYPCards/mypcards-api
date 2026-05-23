@@ -17,6 +17,4 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Validate OpenAPI spec
-        uses: char0n/swagger-editor-validate@v1
-        with:
-          definition-file: swagger.yaml
+        run: npx --yes @redocly/cli@latest lint swagger.yaml --format=github-actions

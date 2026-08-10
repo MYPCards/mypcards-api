@@ -19,6 +19,9 @@ servers:
   - url: "https://mypcards.com/api/v1"
     description: "Servidor de produção"
 
+security:
+  - ApiTokenAuth: []
+
 tags:
   - name: "preço"
     description: "APIs relacionadas a preços de cartas"
@@ -292,44 +295,36 @@ components:
           description: "ID do jogo/marca (1=Magic, 2=Pokémon, 3=Yu-Gi-Oh!, etc.)"
           example: 1
         edition_code:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Sigla da edição — o mesmo valor que aparece em `edition_code` nas cartas"
           example: "DOM"
         edition_pt:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da edição em português"
           example: "Dominária"
         edition_en:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da edição em inglês"
           example: "Dominaria"
         slug_pt:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Slug do nome em português (para URLs)"
           example: "dominaria"
         slug_en:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Slug do nome em inglês (para URLs)"
           example: "dominaria"
         release_date:
-          type: string
+          type: [string, "null"]
           format: date
-          nullable: true
           description: "Data de lançamento no formato ISO (YYYY-MM-DD)"
           example: "2018-04-27"
         total_cards:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: "Quantidade de cartas da edição, quando conhecida"
           example: 298
         link:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "URL da página da edição no MYP Cards"
           example: "https://mypcards.com/magic/dominaria"
 
@@ -350,38 +345,31 @@ components:
           description: "ID do jogo/marca (0=Yu-Gi-Oh!, 1=Magic, 2=Pokémon, etc.)"
           example: 0
         tcg_productId:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: "ID do produto no TCGPlayer (quando disponível)"
           example: 86354
         name_pt:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da carta em português"
           example: "Mago Negro"
         name_en:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da carta em inglês"
           example: "Dark Magician"
         slug_pt:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Slug do nome em português (para URLs)"
           example: "mago-negro"
         slug_en:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Slug do nome em inglês (para URLs)"
           example: "dark-magician"
         edition_pt:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da edição em português"
           example: "Lendas do Duelo Azul"
         edition_en:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da edição em inglês"
           example: "Legend of Blue Eyes White Dragon"
         edition_code:
@@ -389,28 +377,23 @@ components:
           description: "Código/sigla da edição"
           example: "LOB"
         min_price:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Menor preço disponível (em BRL)"
           example: "15.00"
         avg_price:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Preço médio (em BRL)"
           example: "25.50"
         max_price:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Maior preço disponível (em BRL)"
           example: "45.00"
         tcg_price:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Preço de referência do TCGPlayer (em USD)"
           example: "5.99"
         available_quantity:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: "Quantidade total disponível para venda"
           example: 23
         img_pt:
@@ -439,28 +422,23 @@ components:
           description: "ID do jogo/marca"
           example: 0
         name_pt:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da carta em português"
           example: "Mago Negro"
         name_en:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Nome da carta em inglês"
           example: "Dark Magician"
         slugnomeptproduto:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Slug do nome em português"
           example: "mago-negro"
         slugnomeenproduto:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "Slug do nome em inglês"
           example: "dark-magician"
         tcg_productId:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: "ID do produto no TCGPlayer (quando disponível)"
           example: 86354
 

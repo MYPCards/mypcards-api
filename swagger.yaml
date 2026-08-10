@@ -24,6 +24,8 @@ tags:
     description: "APIs relacionadas a preços de cartas"
   - name: "cartas"
     description: "APIs de busca de cartas"
+  - name: "edições"
+    description: "APIs do catálogo de edições"
   - name: "produtos"
     description: "APIs gerais sobre produtos"
 
@@ -133,6 +135,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/CartaResponse"
 
+  /{jogo}/edicoes:
+    get:
+      operationId: "listarEdicoes"
+      tags:
+        - "edições"
+      summary: "Lista as edições de um jogo"
+      description: |
+        Retorna **todas** as edições de um jogo em uma única resposta, sem paginação,
+        ordenadas da mais recente para a mais antiga (edições sem data de lançamento vêm por último).
+
+        Edições orientais (impressões asiáticas) não são retornadas.
+      parameters:
+        - in: "path"
+          name: "jogo"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
+          required: true
+          schema:
+            $ref: "#/components/schemas/Jogos"
+      responses:
+        200:
+          description: "Lista de edições retornada com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EdicoesResponse"
+
   /produto/{id_produto}:
     get:
       operationId: "obterProdutoPorId"
@@ -236,6 +264,74 @@ components:
           description: "Lista de cartas que correspondem à busca"
           items:
             $ref: "#/components/schemas/Produto"
+
+    EdicoesResponse:
+      type: object
+      description: "Resposta com o catálogo completo de edições do jogo"
+      properties:
+        total:
+          type: integer
+          description: "Quantidade de edições retornadas"
+          example: 475
+        editions:
+          type: array
+          description: "Lista de edições, da mais recente para a mais antiga"
+          items:
+            $ref: "#/components/schemas/Edicao"
+
+    Edicao:
+      type: object
+      description: "Dados de uma edição"
+      properties:
+        edition_id:
+          type: integer
+          description: "ID interno da edição no MYP Cards"
+          example: 1046
+        id_marca:
+          type: integer
+          description: "ID do jogo/marca (1=Magic, 2=Pokémon, 3=Yu-Gi-Oh!, etc.)"
+          example: 1
+        edition_code:
+          type: string
+          nullable: true
+          description: "Sigla da edição — o mesmo valor que aparece em `edition_code` nas cartas"
+          example: "DOM"
+        edition_pt:
+          type: string
+          nullable: true
+          description: "Nome da edição em português"
+          example: "Dominária"
+        edition_en:
+          type: string
+          nullable: true
+          description: "Nome da edição em inglês"
+          example: "Dominaria"
+        slug_pt:
+          type: string
+          nullable: true
+          description: "Slug do nome em português (para URLs)"
+          example: "dominaria"
+        slug_en:
+          type: string
+          nullable: true
+          description: "Slug do nome em inglês (para URLs)"
+          example: "dominaria"
+        release_date:
+          type: string
+          format: date
+          nullable: true
+          description: "Data de lançamento no formato ISO (YYYY-MM-DD)"
+          example: "2018-04-27"
+        total_cards:
+          type: integer
+          nullable: true
+          description: "Quantidade de cartas da edição, quando conhecida"
+          example: 298
+        link:
+          type: string
+          nullable: true
+          description: "URL da página da edição no MYP Cards"
+          example: "https://mypcards.com/magic/dominaria"
 
     Produto:
       type: object

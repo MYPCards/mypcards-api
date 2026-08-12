@@ -377,6 +377,22 @@ components:
           type: string
           description: "Código/sigla da edição"
           example: "LOB"
+        deck_labels:
+          type: array
+          items:
+            type: string
+          description: |
+            Todas as grafias que o importador de decks do MYP Cards aceita para **esta impressão exata**, sem repetições, ordenadas da mais específica para a menos.
+
+            Use a primeira ao montar uma decklist para colar: ela resolve um único produto, enquanto o nome puro da carta costuma casar com várias impressões e obriga quem está colando a desempatar linha por linha.
+
+            O formato varia por jogo e por edição — algumas grafias trazem o número com o total do set, outras só o numerador, e a mesma carta pode aparecer em português e em inglês. Não monte a string por conta própria a partir de `name_*` e `edition_code`: um número em formato diferente do cadastrado não é encontrado pelo importador. Use uma destas.
+
+            Lista vazia quando o produto ainda não tem grafias cadastradas.
+          example:
+            - "Dark Magician [LOB] 1"
+            - "Mago Negro [LOB] 1"
+            - "Dark Magician LOB (001/126)"
         min_price:
           type: [string, "null"]
           description: "Menor preço disponível (em BRL)"

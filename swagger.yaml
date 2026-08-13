@@ -241,6 +241,7 @@ components:
         - vanguard
         - swunlimited
         - unionarena
+        - weissschwars
 
     PrecoResponse:
       type: object

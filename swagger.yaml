@@ -242,6 +242,7 @@ components:
         - swunlimited
         - unionarena
         - weissschwars
+        - warlord
 
     PrecoResponse:
       type: object

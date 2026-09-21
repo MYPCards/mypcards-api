@@ -241,8 +241,9 @@ components:
         - vanguard
         - swunlimited
         - unionarena
-        - weissschwars
+        - weissschwarz
         - warlord
+        - cyberpunk
 
     PrecoResponse:
       type: object

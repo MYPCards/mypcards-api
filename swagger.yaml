@@ -9,7 +9,9 @@ info:
 
     **Limites:** A paginação é limitada a 50 itens por página.
 
-    **Autenticação:** Alguns endpoints requerem autenticação via header `X-Api-Token`. Os tokens são gerados internamente — entre em contato com o time de suporte do MYP Cards para solicitar acesso.
+    **Autenticação:** Alguns endpoints requerem autenticação via header `X-Api-Token`. Para obter acesso, faça a solicitação em https://mypcards.com/acesso-api (é preciso ter uma conta no MYP Cards). Depois da aprovação, você mesmo gera a chave no seu painel de acesso à API; ela é exibida uma única vez.
+
+    **Atribuição:** Todo projeto que usa a API precisa exibir, de forma visível onde os dados aparecem, que eles vêm do MYP Cards, com link para https://mypcards.com. Sem a atribuição, o acesso pode ser pausado.
   version: "1.0.0"
   contact:
     name: "MYP Cards"
@@ -214,7 +216,7 @@ components:
       type: apiKey
       in: header
       name: X-Api-Token
-      description: "Token gerado pelo time de suporte do MYP Cards. Entre em contato para solicitar acesso."
+      description: "Chave gerada pelo próprio titular no painel de acesso à API, depois que a solicitação em https://mypcards.com/acesso-api é aprovada. Ela é exibida uma única vez."
 
   schemas:
     Jogos:

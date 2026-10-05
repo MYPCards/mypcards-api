@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Solicitar acesso à API (X-Api-Token)
+    url: https://mypcards.com/acesso-api
+    about: Pedidos de chave são feitos pelo formulário do site, não por issue. Depois da aprovação, você mesmo gera a chave no seu painel.

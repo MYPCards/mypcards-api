@@ -5,7 +5,7 @@ info:
   description: |
     API pública do MYP Cards, o maior portal de cardgames do Brasil.
 
-    **Jogos suportados:** Magic: The Gathering, Yu-Gi-Oh!, Pokémon, One Piece, Lorcana, Flesh & Blood, Digimon, Dragon Ball Super Fusion World, Dragon Ball Super Masters, Gundam, Harry Potter, Lord of the Rings, Battle Scenes, Star Wars: Destiny, Star Wars: Unlimited, Cardfight!! Vanguard, Sorcery: Contested Realm, Riftbound.
+    **Jogos suportados:** Magic: The Gathering, Yu-Gi-Oh!, Pokémon, One Piece, Lorcana, Flesh & Blood, Digimon, Dragon Ball Super Fusion World, Dragon Ball Super Masters, Gundam, Harry Potter, Lord of the Rings, Battle Scenes, Star Wars: Destiny, Star Wars: Unlimited, Cardfight!! Vanguard, Sorcery: Contested Realm, Riftbound. A lista completa e atual está em `GET /jogos`.
 
     **Limites:** A paginação é limitada a 50 itens por página.
 
@@ -25,6 +25,8 @@ security:
   - ApiTokenAuth: []
 
 tags:
+  - name: "jogos"
+    description: "APIs do catálogo de jogos"
   - name: "preço"
     description: "APIs relacionadas a preços de cartas"
   - name: "cartas"
@@ -35,6 +37,24 @@ tags:
     description: "APIs gerais sobre produtos"
 
 paths:
+  /jogos:
+    get:
+      operationId: "listarJogos"
+      tags:
+        - "jogos"
+      summary: "Lista os jogos"
+      description: |
+        Retorna todos os jogos da API em uma única resposta, sem paginação. A ordem é a mesma do MYP Cards.
+
+        O `slug` de cada jogo é o valor do parâmetro `{jogo}` dos demais endpoints.
+      responses:
+        200:
+          description: "Lista de jogos retornada com sucesso"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JogosResponse"
+
   /{jogo}/precos:
     get:
       operationId: "listarPrecos"
@@ -45,7 +65,7 @@ paths:
       parameters:
         - in: "path"
           name: "jogo"
-          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`). A lista completa está em `GET /jogos`."
           required: true
           schema:
             $ref: "#/components/schemas/Jogos"
@@ -84,7 +104,7 @@ paths:
       parameters:
         - in: "path"
           name: "jogo"
-          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`). A lista completa está em `GET /jogos`."
           required: true
           schema:
             $ref: "#/components/schemas/Jogos"
@@ -121,7 +141,7 @@ paths:
       parameters:
         - in: "path"
           name: "jogo"
-          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`). A lista completa está em `GET /jogos`."
           required: true
           schema:
             $ref: "#/components/schemas/Jogos"
@@ -154,7 +174,7 @@ paths:
       parameters:
         - in: "path"
           name: "jogo"
-          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`)"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`). A lista completa está em `GET /jogos`."
           required: true
           schema:
             $ref: "#/components/schemas/Jogos"
@@ -246,6 +266,34 @@ components:
         - weissschwarz
         - warlord
         - cyberpunk
+
+    JogosResponse:
+      type: object
+      description: "Resposta com a lista de jogos"
+      properties:
+        total:
+          type: integer
+          description: "Quantidade de jogos retornados"
+          example: 3
+        games:
+          type: array
+          description: "Lista de jogos"
+          items:
+            $ref: "#/components/schemas/Jogo"
+
+    Jogo:
+      type: object
+      description: "Dados de um jogo"
+      properties:
+        slug:
+          $ref: "#/components/schemas/Jogos"
+        name:
+          type: string
+          description: "Nome do jogo"
+          example: "Yu-Gi-Oh!"
+      example:
+        slug: "yugioh"
+        name: "Yu-Gi-Oh!"
 
     PrecoResponse:
       type: object

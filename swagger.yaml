@@ -9,7 +9,11 @@ info:
 
     **Limites:** A paginação é limitada a 50 itens por página.
 
-    **Autenticação:** Alguns endpoints requerem autenticação via header `X-Api-Token`. Para obter acesso, faça a solicitação em https://mypcards.com/acesso-api (é preciso ter uma conta no MYP Cards). Depois da aprovação, você mesmo gera a chave no seu painel de acesso à API; ela é exibida uma única vez.
+    **Autenticação:** Nenhum endpoint exige token, mas o token aumenta o limite de requisições. Envie a chave no header `X-Api-Token`. Um token inválido vale como nenhum token. Para obter acesso, faça a solicitação em https://mypcards.com/acesso-api (é preciso ter uma conta no MYP Cards). Depois da aprovação, você mesmo gera a chave no seu painel de acesso à API; ela é exibida uma única vez.
+
+    **Erros:** Todo erro das rotas documentadas responde com o código HTTP correto para o erro e um corpo `{"error": "...", "code": "...", "status": N}`. O `code` é estável e a lista está no schema `Error`. Uma falha inesperada responde 500 com `code` `internal_error`.
+
+    **Limite de requisições:** 60 por minuto com token e 10 por minuto sem token, contados por IP e por endpoint. Toda resposta traz os cabeçalhos `X-Rate-Limit-Limit` e `X-Rate-Limit-Remaining`. Sem token válido, ela traz também `X-Api-Token-Notice`. Ao passar do limite, a resposta é 429.
 
     **Atribuição:** Todo projeto que usa a API precisa exibir, de forma visível onde os dados aparecem, que eles vêm do MYP Cards, com link para https://mypcards.com. Sem a atribuição, o acesso pode ser pausado.
   version: "1.0.0"
@@ -22,6 +26,7 @@ servers:
     description: "Servidor de produção"
 
 security:
+  - {}
   - ApiTokenAuth: []
 
 tags:
@@ -54,6 +59,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JogosResponse"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
 
   /{jogo}/precos:
     get:
@@ -71,7 +78,7 @@ paths:
             $ref: "#/components/schemas/Jogos"
         - in: "query"
           name: "page_number"
-          description: "Número da página (começa em 1)"
+          description: "Número da página (começa em 1). Um valor menor que 1 vira 1"
           required: false
           schema:
             type: "integer"
@@ -79,7 +86,7 @@ paths:
             minimum: 1
         - name: "page_size"
           in: "query"
-          description: "Quantidade de itens por página"
+          description: "Quantidade de itens por página. Valores fora do intervalo são ajustados para o limite mais próximo"
           required: false
           schema:
             type: "integer"
@@ -93,6 +100,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PrecoResponse"
+        400:
+          $ref: "#/components/responses/ParametroInvalido"
+        404:
+          description: "Jogo não encontrado (`code`: `game_not_found`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
 
   /{jogo}/precos/{codigo}:
     get:
@@ -124,12 +141,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Produto"
+        400:
+          $ref: "#/components/responses/ParametroInvalido"
         404:
-          description: "Carta não encontrada"
+          description: "Jogo ou carta não encontrado (`code`: `game_not_found` ou `card_not_found`)"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
 
   /{jogo}/carta/{nome}:
     get:
@@ -159,6 +180,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CartaResponse"
+        404:
+          description: "Jogo não encontrado (`code`: `game_not_found`). Uma busca sem resultado responde 200 com `cards` vazio"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
 
   /{jogo}/edicoes:
     get:
@@ -185,6 +214,77 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EdicoesResponse"
+        404:
+          description: "Jogo não encontrado (`code`: `game_not_found`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
+
+  /{jogo}/edicoes/{edition_id}/precos:
+    get:
+      operationId: "obterPrecosDaEdicao"
+      tags:
+        - "edições"
+      summary: "Preço de uma edição ao longo do tempo"
+      description: |
+        Retorna o valor do set e a quantidade de cartas com preço, semana a semana, para uma edição. É a mesma série da página de preço da edição no site.
+
+        O valor do set e as variações em percentual são valores exatos. A quantidade de cartas com preço nunca sai como número. Cada semana traz o índice da faixa (`cards_with_price_range`), e `ranges` diz o intervalo de cartas de cada índice. Com o filtro `rarity[]`, o índice vem `null` em todas as semanas, porque junto com `total_cards` ele revelaria a quantidade exata. Estoque, cópias à venda e pedidos não são retornados.
+
+        Só as edições que `GET /{jogo}/edicoes` lista podem ser consultadas.
+      parameters:
+        - in: "path"
+          name: "jogo"
+          description: "Identificador do jogo (ex: `yugioh`, `pokemon`, `magic`). A lista completa está em `GET /jogos`."
+          required: true
+          schema:
+            $ref: "#/components/schemas/Jogos"
+        - in: "path"
+          name: "edition_id"
+          description: "ID da edição, o mesmo `edition_id` retornado por `GET /{jogo}/edicoes`"
+          required: true
+          schema:
+            type: integer
+            example: 1046
+        - in: "query"
+          name: "days"
+          description: "Janela da série, em dias. `0` retorna a série inteira, que começa em 18/01/2026 ou na data de lançamento da edição, a que for mais recente"
+          required: false
+          schema:
+            type: integer
+            enum: [90, 180, 365, 0]
+            default: 90
+        - in: "query"
+          name: "rarity[]"
+          description: "IDs de raridade para filtrar as cartas, os mesmos de `available_rarities`. Repita o parâmetro para mais de uma raridade, até 5. Um ID que não é de `available_rarities` gera 400"
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            maxItems: 5
+            items:
+              type: integer
+      responses:
+        200:
+          description: "Série de preço da edição"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EdicaoPrecosResponse"
+        400:
+          $ref: "#/components/responses/ParametroInvalido"
+        404:
+          description: "Jogo ou edição não encontrado (`code`: `game_not_found` ou `edition_not_found`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
 
   /produto/{id_produto}:
     get:
@@ -208,12 +308,100 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProdutoSimples"
+        400:
+          $ref: "#/components/responses/ParametroInvalido"
         404:
-          description: "Produto não encontrado"
+          description: "Produto não encontrado (`code`: `product_not_found`)"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
+
+  /produto/{id_produto}/historico:
+    get:
+      operationId: "obterHistoricoDoProduto"
+      tags:
+        - "preço"
+      summary: "Histórico de preço de um produto"
+      description: |
+        Retorna a série diária de preço de **uma versão** de um produto (foil, qualidade, idioma e, nas cartas graduadas, graduadora e nota). Dias sem mudança repetem o valor do dia anterior.
+
+        Sem parâmetros de versão, a resposta usa a versão avulsa mais vendida nos últimos 30 dias. Com parâmetros de versão, os que você omite valem para qualquer valor, menos `grader`: sem ele, só as cartas avulsas entram. Se mais de uma versão servir, a resposta usa a que tem mais dias de histórico. A versão precisa existir, senão a resposta é 404 `version_not_found`, sem trocar por outra. Para uma carta graduada, envie `grader` e `grade` juntos. `versions` lista todas as versões que têm histórico, graduadas incluídas.
+
+        Os preços são exatos. A quantidade à venda ao longo do tempo nunca sai como número. Cada dia traz o índice da faixa (`available_quantity_range`), e `quantity_ranges` diz o intervalo de cada índice. Os índices mostram só a faixa da quantidade, não a quantidade. A quantidade vendida não é retornada.
+
+        A série começa no dia mais recente entre hoje menos `days` e o primeiro dia com dado, então pode ter menos dias que `days`.
+      parameters:
+        - in: "path"
+          name: "id_produto"
+          description: "ID interno do produto no MYP Cards (`internal_code`)"
+          required: true
+          schema:
+            type: integer
+            example: 12345
+        - in: "query"
+          name: "days"
+          description: "Janela da série, em dias"
+          required: false
+          schema:
+            type: integer
+            enum: [30, 90, 180, 365]
+            default: 90
+        - in: "query"
+          name: "foil"
+          description: "ID do foil da versão (`foil_id` em `versions`)"
+          required: false
+          schema:
+            type: integer
+            maximum: 999999999
+        - in: "query"
+          name: "condition"
+          description: "Qualidade da versão"
+          required: false
+          schema:
+            type: string
+            enum: [NM, SP, MP, HP, DM]
+        - in: "query"
+          name: "language"
+          description: "ID do idioma da versão (`language_id` em `versions`)"
+          required: false
+          schema:
+            type: integer
+            maximum: 999999999
+        - in: "query"
+          name: "grader"
+          description: "ID da graduadora, para uma carta graduada"
+          required: false
+          schema:
+            type: integer
+            maximum: 999999999
+        - in: "query"
+          name: "grade"
+          description: "Nota da carta graduada, com no máximo uma casa decimal, por exemplo `9.5` ou `10`. Exige `grader`"
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{1,2}(\.\d0?)?$'
+            example: "9.5"
+      responses:
+        200:
+          description: "Histórico de preço da versão"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoricoResponse"
+        400:
+          $ref: "#/components/responses/ParametroInvalido"
+        404:
+          description: "Produto ou versão não encontrado (`code`: `product_not_found` ou `version_not_found`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
 
   /produto/aleatorio:
     get:
@@ -229,6 +417,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProdutoSimples"
+        404:
+          description: "Nenhum produto disponível (`code`: `no_product_available`)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        429:
+          $ref: "#/components/responses/LimiteExcedido"
 
 components:
   securitySchemes:
@@ -237,6 +433,29 @@ components:
       in: header
       name: X-Api-Token
       description: "Chave gerada pelo próprio titular no painel de acesso à API, depois que a solicitação em https://mypcards.com/acesso-api é aprovada. Ela é exibida uma única vez."
+
+  responses:
+    ParametroInvalido:
+      description: "Parâmetro inválido (`code`: `invalid_parameter`)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    LimiteExcedido:
+      description: "Limite de requisições excedido (`code`: `rate_limited`)"
+      headers:
+        X-Rate-Limit-Limit:
+          description: "Máximo de requisições por janela de 60 segundos. Toda resposta traz este cabeçalho"
+          schema:
+            type: integer
+        X-Rate-Limit-Remaining:
+          description: "Requisições que restam na janela. É 0 quando o limite estoura"
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
 
   schemas:
     Jogos:
@@ -307,6 +526,10 @@ components:
           type: integer
           description: "Quantidade de itens por página"
           example: 50
+        total_items:
+          type: integer
+          description: "Quantidade de produtos do jogo no catálogo. Não é quantidade em estoque"
+          example: 41307
         cards:
           type: array
           description: "Lista de cartas"
@@ -468,12 +691,12 @@ components:
           description: "Quantidade à venda das mesmas cartas de `min_price`. Cartas graduadas e outros idiomas não entram, então uma carta vendida só nesses casos devolve 0 e preços nulos"
           example: 23
         img_pt:
-          type: string
-          description: "URL da imagem da carta em português"
+          type: [string, "null"]
+          description: "URL da imagem da carta em português. É `null` quando o produto não tem imagem"
           example: "https://img.mypcards.com/produtos/12345_pt.jpg"
         img_en:
-          type: string
-          description: "URL da imagem da carta em inglês"
+          type: [string, "null"]
+          description: "URL da imagem da carta em inglês. É `null` quando o produto não tem imagem"
           example: "https://img.mypcards.com/produtos/12345_en.jpg"
         link:
           type: string
@@ -513,11 +736,221 @@ components:
           description: "ID do produto no TCGPlayer (quando disponível)"
           example: 86354
 
+    FaixaDeQuantidade:
+      type: object
+      description: "Intervalo de quantidade que um índice representa"
+      properties:
+        index:
+          type: integer
+          description: "Índice da faixa"
+          example: 3
+        min:
+          type: integer
+          description: "Menor quantidade da faixa"
+          example: 11
+        max:
+          type: [integer, "null"]
+          description: "Maior quantidade da faixa. `null` na última faixa, que não tem limite"
+          example: 25
+
+    SemanaDePreco:
+      type: object
+      description: "Uma semana da série de preço da edição"
+      properties:
+        week:
+          type: string
+          format: date
+          description: "Domingo da semana"
+          example: "2026-10-18"
+        set_value:
+          type: [number, "null"]
+          description: "Valor do set na semana (em BRL). Nas semanas recentes é a soma, por carta, da menor mediana de preço da versão NM sem foil. As semanas antigas, que vêm de um arquivo, usam outra regra. É `null` quando não há dado"
+          example: 1840.5
+        cards_with_price_range:
+          type: [integer, "null"]
+          description: "Índice da faixa da quantidade de cartas com preço na semana. Veja `ranges`. É `null` quando a consulta usa `rarity[]`"
+          example: 7
+
+    EdicaoPrecosResponse:
+      type: object
+      description: "Série de preço de uma edição"
+      properties:
+        edition_id:
+          type: integer
+          example: 1046
+        id_marca:
+          type: integer
+          example: 1
+        edition_code:
+          type: [string, "null"]
+          example: "DOM"
+        edition_pt:
+          type: [string, "null"]
+          example: "Dominária"
+        edition_en:
+          type: [string, "null"]
+          example: "Dominaria"
+        currency:
+          type: string
+          description: "Moeda dos valores"
+          example: "BRL"
+        days:
+          type: integer
+          description: "Janela aplicada, em dias. `0` é a série inteira"
+          example: 90
+        rarities:
+          type: array
+          description: "IDs de raridade aplicados no filtro. Vazio quando não há filtro"
+          items:
+            type: integer
+        available_rarities:
+          type: array
+          description: "Raridades da edição que podem ser usadas no filtro"
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 2
+              name:
+                type: string
+                example: "Rare"
+        total_cards:
+          type: integer
+          description: "Quantidade de cartas da edição no catálogo, com o filtro de raridade, se houver. Pode diferir de `total_cards` em `GET /{jogo}/edicoes`, que é o total cadastrado"
+          example: 298
+        set_value:
+          type: [number, "null"]
+          description: "Último valor do set da série inteira, não só da janela `days` (em BRL). Com o filtro de raridade, é o valor das cartas filtradas"
+          example: 1840.5
+        change_week_pct:
+          type: [number, "null"]
+          description: "Variação do valor do set na última semana, em percentual. Usa só as semanas com preço da fonte atual. As semanas do arquivo antigo não entram"
+          example: -1.2
+        change_4_weeks_pct:
+          type: [number, "null"]
+          description: "Variação do valor do set nas últimas quatro semanas, em percentual. Segue a mesma regra de `change_week_pct`"
+          example: 3.4
+        ranges:
+          type: array
+          description: "Intervalo de cartas de cada índice de `cards_with_price_range`"
+          items:
+            $ref: "#/components/schemas/FaixaDeQuantidade"
+        weeks:
+          type: array
+          description: "Semanas da janela, da mais antiga para a mais recente"
+          items:
+            $ref: "#/components/schemas/SemanaDePreco"
+
+    VersaoDePreco:
+      type: object
+      description: "Uma versão de um produto: a versão que tem histórico de preço próprio"
+      properties:
+        foil_id:
+          type: integer
+          example: 1
+        foil_name:
+          type: string
+          example: "Normal"
+        condition:
+          type: string
+          enum: [NM, SP, MP, HP, DM]
+        language_id:
+          type: integer
+          example: 2
+        language_name:
+          type: string
+          example: "English"
+        grader_id:
+          type: [integer, "null"]
+          description: "ID da graduadora. `null` nas cartas avulsas"
+        grade:
+          type: [string, "null"]
+          description: "Nota da carta graduada. `null` nas cartas avulsas"
+          example: "9.5"
+
+    PontoDeHistorico:
+      type: object
+      description: "Um dia da série de preço"
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-10-20"
+        min_price:
+          type: [number, "null"]
+          description: "Menor preço do dia (em BRL)"
+        median:
+          type: [number, "null"]
+          description: "Mediana dos preços à venda no dia (em BRL)"
+        median_sold:
+          type: [number, "null"]
+          description: "Mediana dos preços de venda no dia (em BRL)"
+        available_quantity_range:
+          type: [integer, "null"]
+          description: "Índice da faixa da quantidade à venda no dia. Veja `quantity_ranges`"
+          example: 4
+
+    HistoricoResponse:
+      type: object
+      description: "Série diária de preço de uma versão de um produto"
+      properties:
+        internal_code:
+          type: integer
+          example: 12345
+        currency:
+          type: string
+          example: "BRL"
+        days:
+          type: integer
+          example: 90
+        version:
+          oneOf:
+            - $ref: "#/components/schemas/VersaoDePreco"
+            - type: "null"
+          description: "A versão da série. É `null` quando não há versão avulsa para escolher: o produto não tem histórico, ou só tem histórico de cartas graduadas. `points` vem vazio"
+        versions:
+          type: array
+          description: "Todas as versões do produto que têm histórico, graduadas incluídas"
+          items:
+            $ref: "#/components/schemas/VersaoDePreco"
+        quantity_ranges:
+          type: array
+          description: "Intervalo de quantidade de cada índice de `available_quantity_range`"
+          items:
+            $ref: "#/components/schemas/FaixaDeQuantidade"
+        points:
+          type: array
+          description: "Um ponto por dia, do mais antigo para o mais recente"
+          items:
+            $ref: "#/components/schemas/PontoDeHistorico"
+
     Error:
       type: object
-      description: "Resposta de erro"
+      description: "Resposta de erro. O campo `error` é a mensagem em inglês; use `code` no seu código, que é estável"
+      required: [error, code, status]
       properties:
         error:
           type: string
           description: "Mensagem de erro"
           example: "card_code not found."
+        code:
+          type: string
+          description: "Código estável do erro"
+          enum:
+            - invalid_parameter
+            - game_not_found
+            - card_not_found
+            - product_not_found
+            - no_product_available
+            - edition_not_found
+            - version_not_found
+            - not_found
+            - rate_limited
+            - internal_error
+            - http_error
+          example: "card_not_found"
+        status:
+          type: integer
+          description: "Código HTTP da resposta"
+          example: 404

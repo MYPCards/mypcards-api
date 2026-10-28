@@ -385,7 +385,7 @@ components:
 
     Produto:
       type: object
-      description: "Dados completos de uma carta/produto"
+      description: "Dados completos de uma carta/produto. Preços e quantidades vêm das estatísticas do MYP Cards, que a API guarda em cache por 5 minutos; o atraso da fila de estatísticas não é conhecido"
       properties:
         internal_code:
           type: integer
@@ -449,23 +449,23 @@ components:
             - "Dark Magician LOB (001/126)"
         min_price:
           type: [string, "null"]
-          description: "Menor preço disponível (em BRL)"
+          description: "Menor preço entre as cartas avulsas (não graduadas) à venda em português, inglês ou português-inglês (em BRL)"
           example: "15.00"
         avg_price:
           type: [string, "null"]
-          description: "Preço médio (em BRL)"
+          description: "Preço médio das mesmas cartas de `min_price`, ponderado pela quantidade à venda (em BRL)"
           example: "25.50"
         max_price:
           type: [string, "null"]
-          description: "Maior preço disponível (em BRL)"
+          description: "Maior preço entre as mesmas cartas de `min_price` (em BRL)"
           example: "45.00"
         tcg_price:
           type: [string, "null"]
-          description: "Preço de referência do TCGPlayer (em USD)"
+          description: "Preço de mercado da versão comum no TCGPlayer (em USD). Quando ele não existe, usa o preço do foil"
           example: "5.99"
         available_quantity:
           type: [integer, "null"]
-          description: "Quantidade total disponível para venda"
+          description: "Quantidade à venda das mesmas cartas de `min_price`. Cartas graduadas e outros idiomas não entram, então uma carta vendida só nesses casos devolve 0 e preços nulos"
           example: 23
         img_pt:
           type: string

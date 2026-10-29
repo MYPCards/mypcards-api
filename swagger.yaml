@@ -68,7 +68,7 @@ paths:
       tags:
         - "preço"
       summary: "Lista cartas com preços"
-      description: "Retorna uma lista paginada de cartas de um jogo específico com informações de preço."
+      description: "Retorna uma lista paginada das cartas de um jogo que têm estoque à venda, segundo as estatísticas do MYP Cards, com informações de preço. Cartas sem estoque não aparecem. A resposta não traz o total de itens: pagine até `cards` vir vazio."
       parameters:
         - in: "path"
           name: "jogo"
@@ -117,7 +117,7 @@ paths:
       tags:
         - "preço"
       summary: "Obtém carta por código"
-      description: "Retorna os dados de uma carta específica com base no código do produto."
+      description: "Retorna os dados de uma carta específica com base no código do produto. A carta é retornada mesmo sem estoque; nesse caso os preços vêm `null`."
       parameters:
         - in: "path"
           name: "jogo"
@@ -158,7 +158,7 @@ paths:
       tags:
         - "cartas"
       summary: "Busca cartas por nome"
-      description: "Retorna uma lista de cartas que correspondem exatamente ao nome informado."
+      description: "Retorna uma lista de cartas que correspondem exatamente ao nome informado. As cartas são retornadas mesmo sem estoque; nesse caso os preços vêm `null`."
       parameters:
         - in: "path"
           name: "jogo"
@@ -273,7 +273,7 @@ paths:
       tags:
         - "produtos"
       summary: "Obtém produto por ID"
-      description: "Retorna os dados de um produto específico com base no ID interno do MYP Cards."
+      description: "Retorna os dados de um produto de jogo com base no ID interno do MYP Cards, no mesmo formato da lista de preços. O produto é retornado mesmo sem estoque; nesse caso os preços vêm `null`. Um produto que não é de um jogo responde 404."
       parameters:
         - in: "path"
           name: "id_produto"
@@ -288,11 +288,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProdutoSimples"
+                $ref: "#/components/schemas/Produto"
         400:
           $ref: "#/components/responses/ParametroInvalido"
         404:
-          description: "Produto não encontrado (`code`: `product_not_found`)"
+          description: "Produto não encontrado, ou que não é de um jogo (`code`: `product_not_found`)"
           content:
             application/json:
               schema:
@@ -437,10 +437,6 @@ components:
           type: integer
           description: "Quantidade de itens por página"
           example: 50
-        total_items:
-          type: integer
-          description: "Quantidade de produtos do jogo no catálogo. Não é quantidade em estoque"
-          example: 41307
         cards:
           type: array
           description: "Lista de cartas"
@@ -519,7 +515,7 @@ components:
 
     Produto:
       type: object
-      description: "Dados completos de uma carta/produto. Preços e quantidades vêm das estatísticas do MYP Cards, que a API guarda em cache por 5 minutos; o atraso da fila de estatísticas não é conhecido"
+      description: "Dados completos de uma carta/produto. Os preços vêm das estatísticas do MYP Cards, que a API guarda em cache por 5 minutos; o atraso da fila de estatísticas não é conhecido"
       properties:
         internal_code:
           type: integer
@@ -531,8 +527,8 @@ components:
           example: "LOB-001"
         id_marca:
           type: integer
-          description: "ID do jogo/marca (0=Yu-Gi-Oh!, 1=Magic, 2=Pokémon, etc.)"
-          example: 0
+          description: "ID do jogo/marca (1=Magic, 2=Pokémon, 3=Yu-Gi-Oh!, etc.)"
+          example: 3
         tcg_productId:
           type: [integer, "null"]
           description: "ID do produto no TCGPlayer (quando disponível)"
@@ -562,7 +558,7 @@ components:
           description: "Nome da edição em inglês"
           example: "Legend of Blue Eyes White Dragon"
         edition_code:
-          type: string
+          type: [string, "null"]
           description: "Código/sigla da edição"
           example: "LOB"
         deck_labels:
@@ -583,24 +579,12 @@ components:
             - "Dark Magician LOB (001/126)"
         min_price:
           type: [string, "null"]
-          description: "Menor preço entre as cartas avulsas (não graduadas) à venda em português, inglês ou português-inglês (em BRL)"
+          description: "Menor preço entre as cartas avulsas (não graduadas) à venda em português, inglês ou português-inglês (em BRL). É `null` quando não há carta avulsa à venda nesses idiomas"
           example: "15.00"
         avg_price:
           type: [string, "null"]
           description: "Preço médio das mesmas cartas de `min_price`, ponderado pela quantidade à venda (em BRL)"
           example: "25.50"
-        max_price:
-          type: [string, "null"]
-          description: "Maior preço entre as mesmas cartas de `min_price` (em BRL)"
-          example: "45.00"
-        tcg_price:
-          type: [string, "null"]
-          description: "Preço de mercado da versão comum no TCGPlayer (em USD). Quando ele não existe, usa o preço do foil"
-          example: "5.99"
-        available_quantity:
-          type: [integer, "null"]
-          description: "Quantidade à venda das mesmas cartas de `min_price`. Cartas graduadas e de outros idiomas não entram. É 0 quando só há cartas avulsas em outros idiomas, e `null` quando não há estoque avulso (só graduadas, ou sem estoque). Nos dois casos os preços vêm nulos"
-          example: 23
         img_pt:
           type: [string, "null"]
           description: "URL da imagem da carta em português. É `null` quando o produto não tem imagem"
@@ -613,39 +597,6 @@ components:
           type: string
           description: "URL da página do produto no MYP Cards"
           example: "https://mypcards.com/yugioh/produto/12345/dark-magician"
-
-    ProdutoSimples:
-      type: object
-      description: "Dados básicos de um produto (sem informações de preço)"
-      properties:
-        internal_code:
-          type: integer
-          description: "ID interno do produto no MYP Cards"
-          example: 12345
-        idmarca:
-          type: integer
-          description: "ID do jogo/marca"
-          example: 0
-        name_pt:
-          type: [string, "null"]
-          description: "Nome da carta em português"
-          example: "Mago Negro"
-        name_en:
-          type: [string, "null"]
-          description: "Nome da carta em inglês"
-          example: "Dark Magician"
-        slugnomeptproduto:
-          type: [string, "null"]
-          description: "Slug do nome em português"
-          example: "mago-negro"
-        slugnomeenproduto:
-          type: [string, "null"]
-          description: "Slug do nome em inglês"
-          example: "dark-magician"
-        tcg_productId:
-          type: [integer, "null"]
-          description: "ID do produto no TCGPlayer (quando disponível)"
-          example: 86354
 
     EdicaoPrecosResponse:
       type: object

@@ -336,29 +336,6 @@ paths:
         429:
           $ref: "#/components/responses/LimiteExcedido"
 
-  /produto/aleatorio:
-    get:
-      operationId: "obterProdutoAleatorio"
-      tags:
-        - "produtos"
-      summary: "Obtém produto aleatório"
-      description: "Retorna um produto aleatório disponível para venda no marketplace."
-      responses:
-        200:
-          description: "Produto retornado com sucesso"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProdutoSimples"
-        404:
-          description: "Nenhum produto disponível (`code`: `no_product_available`)"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        429:
-          $ref: "#/components/responses/LimiteExcedido"
-
 components:
   securitySchemes:
     ApiTokenAuth:
@@ -790,7 +767,6 @@ components:
             - game_not_found
             - card_not_found
             - product_not_found
-            - no_product_available
             - edition_not_found
             - not_found
             - rate_limited

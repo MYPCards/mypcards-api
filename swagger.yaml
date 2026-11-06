@@ -585,6 +585,14 @@ components:
           type: [string, "null"]
           description: "Preço médio das mesmas cartas de `min_price`, ponderado pela quantidade à venda (em BRL)"
           example: "25.50"
+        prices:
+          type: array
+          description: |
+            Preço de hoje de cada impressão da carta, com uma entrada por idioma e impressão. Não é uma série: para os dias anteriores use `GET /produto/{id_produto}/historico`.
+
+            Entram só a condição NM e só as combinações com oferta agora. Cartas graduadas ficam de fora, e a lista não traz quantidade. Quem quiser o preço de outra condição, como SP, calcula a partir do preço de NM. É uma lista vazia quando nenhuma combinação tem oferta.
+          items:
+            $ref: "#/components/schemas/PrecoPorImpressao"
         img_pt:
           type: [string, "null"]
           description: "URL da imagem da carta em português. É `null` quando o produto não tem imagem"
@@ -597,6 +605,23 @@ components:
           type: string
           description: "URL da página do produto no MYP Cards"
           example: "https://mypcards.com/yugioh/produto/12345/dark-magician"
+
+    PrecoPorImpressao:
+      type: object
+      description: "Menor preço NM de uma carta em um idioma e uma impressão"
+      properties:
+        language:
+          type: string
+          description: "Nome do idioma, em inglês"
+          example: "English"
+        printing:
+          type: string
+          description: "Nome da impressão, em inglês: Normal, Foil, Reverse Foil, Altered Art ou Promo"
+          example: "Foil"
+        min_price:
+          type: string
+          description: "Menor preço à venda dessa combinação (em BRL)"
+          example: "249.90"
 
     EdicaoPrecosResponse:
       type: object

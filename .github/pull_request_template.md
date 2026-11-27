@@ -33,5 +33,6 @@ Apague todos os comentários, inclusive os das seções, antes de abrir o pull r
 ## Verificações
 
 - Lint: <!-- `npx @redocly/cli lint swagger.yaml`: erros e avisos, e se os avisos são os mesmos da `main`. -->
+- Teste visual: <!-- Testamos o visual sempre que der. Abriu o Swagger UI com a mudança e conferiu como ela aparece? Diga o que viu. Só escreva "nenhum" quando o `swagger.yaml` não mudou, e diga por quê. -->
 - Produção: <!-- A resposta descrita foi conferida com uma chamada real à produção? Diga sim ou não. -->
 - Não verificado: <!-- Cada verificação que você não rodou, como a renderização no Swagger UI. Escreva "nenhum" só quando rodou tudo de que esta mudança precisa. -->
